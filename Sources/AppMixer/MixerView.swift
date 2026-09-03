@@ -224,62 +224,35 @@ private struct MeterSlider: View {
     let muted: Bool
 
     private let thumbSize: CGFloat = 20
-    private let trackHeight: CGFloat = 7
 
     var body: some View {
-        GeometryReader { proxy in
-            let trackWidth = max(0, proxy.size.width - thumbSize)
-            let clampedLevel = max(0, min(1, level))
-            let clampedValue = max(0, min(1, value))
-            let thumbX = (thumbSize / 2) + (trackWidth * clampedValue)
+        ZStack {
+            // Keep Apple's native macOS slider so application rows and the
+            // output-device row share the same glass thumb and track styling.
+            Slider(value: $value, in: 0...1)
+                .labelsHidden()
 
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.secondary.opacity(0.24))
-                    .frame(width: trackWidth, height: trackHeight)
-                    .offset(x: thumbSize / 2)
+            GeometryReader { proxy in
+                let trackWidth = max(0, proxy.size.width - thumbSize)
+                let clampedLevel = max(0, min(1, level))
+                let clampedValue = max(0, min(1, value))
+                let levelWidth = trackWidth * min(clampedLevel, clampedValue)
+                let thumbClearance = thumbSize / 2
+                let selectedWidth = trackWidth * clampedValue
+                let visibleWidth = max(0, min(levelWidth, selectedWidth - thumbClearance))
 
                 Capsule()
-                    .fill(muted ? AnyShapeStyle(Color.secondary.opacity(0.45)) : AnyShapeStyle(meterGradient))
-                    .frame(width: trackWidth * clampedLevel, height: trackHeight)
-                    .offset(x: thumbSize / 2)
-                    .shadow(color: muted ? .clear : Color.accentColor.opacity(0.28), radius: 2)
+                    .fill(muted ? Color.secondary.opacity(0.55) : Color.green.opacity(0.78))
+                    .frame(width: visibleWidth, height: 4)
+                    .position(
+                        x: (thumbSize / 2) + (visibleWidth / 2),
+                        y: proxy.size.height / 2
+                    )
                     .animation(.linear(duration: 0.05), value: level)
-
-                Circle()
-                    .fill(.white)
-                    .overlay(Circle().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
-                    .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
-                    .frame(width: thumbSize, height: thumbSize)
-                    .position(x: thumbX, y: proxy.size.height / 2)
             }
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { gesture in
-                        let position = gesture.location.x - (thumbSize / 2)
-                        value = max(0, min(1, position / max(1, trackWidth)))
-                    }
-            )
+            .allowsHitTesting(false)
         }
-        .accessibilityElement()
         .accessibilityLabel("Application volume")
-        .accessibilityValue("\(Int(value * 100)) percent")
-        .accessibilityAdjustableAction { direction in
-            switch direction {
-            case .increment: value = min(1, value + 0.05)
-            case .decrement: value = max(0, value - 0.05)
-            @unknown default: break
-            }
-        }
-    }
-
-    private var meterGradient: LinearGradient {
-        LinearGradient(
-            colors: [.blue, .cyan, .green, .yellow],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
     }
 }
 
