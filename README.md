@@ -12,7 +12,7 @@ The current output device is always available as a sticky master-volume row at t
 - App icons and remembered volume settings
 - Search by application name
 - Sticky system-output volume control
-- Automatic handling when the default output device changes
+- Automatically follows default output changes, including switches between built-in speakers and Bluetooth earbuds
 - Native SwiftUI interface with no third-party dependencies
 - System background services are hidden from the application list
 
@@ -73,5 +73,4 @@ Sources/AppMixer/
 
 - Some HDMI, digital, and professional audio devices do not expose software master-volume control.
 - Unusual multichannel or encoded output formats may not support per-app gain routing yet.
-- Changing Bluetooth or aggregate-device configurations may require relaunching App Mixer.
 - This is an early build and has not yet been prepared for App Store distribution.
