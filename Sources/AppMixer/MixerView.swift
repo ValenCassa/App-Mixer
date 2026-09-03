@@ -3,6 +3,7 @@ import SwiftUI
 
 struct MixerView: View {
     @EnvironmentObject private var mixer: MixerModel
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,7 +29,13 @@ struct MixerView: View {
             footer
         }
         .frame(width: 410)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(panelBackground)
+    }
+
+    private var panelBackground: Color {
+        colorScheme == .dark
+            ? Color(red: 0.14, green: 0.145, blue: 0.15)
+            : Color(red: 0.92, green: 0.925, blue: 0.93)
     }
 
     private var searchBar: some View {
