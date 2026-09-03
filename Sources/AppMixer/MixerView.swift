@@ -28,7 +28,7 @@ struct MixerView: View {
             footer
         }
         .frame(width: 410)
-        .background(.ultraThinMaterial)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var searchBar: some View {
