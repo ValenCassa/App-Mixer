@@ -1,5 +1,8 @@
 # App Mixer
 
+<img width="1022" height="1016" alt="CleanShot 2026-09-03 at 10 33 48 AM@2x" src="https://github.com/user-attachments/assets/19648210-051a-4d6d-b9fe-5b81fafa899d" />
+
+
 App Mixer is a lightweight, native macOS menu-bar app for controlling the volume of individual applications. It shows every open app, gives each one its own volume and mute control, and visualizes live audio directly inside the slider track.
 
 The current output device is always available as a sticky master-volume row at the bottom.
