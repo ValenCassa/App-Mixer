@@ -179,7 +179,11 @@ private let appMixerIOProc: AudioDeviceIOProc = {
         }
     }
 
-    state.publish(level: min(1, peak * 2.4))
+    // A decibel scale matches perceived loudness and keeps normal speech and
+    // music visible. Map -60 dB...0 dB onto the meter's 0...1 range.
+    let decibels = peak > 0.000_001 ? 20 * log10f(peak) : -60
+    let meterLevel = max(0, min(1, (decibels + 60) / 60))
+    state.publish(level: meterLevel)
     return noErr
 }
 

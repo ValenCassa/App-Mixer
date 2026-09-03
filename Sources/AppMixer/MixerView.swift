@@ -197,20 +197,15 @@ private struct AppVolumeRow: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(app.isMuted ? Color.red : Color.secondary)
 
-                    ZStack(alignment: .leading) {
-                        LevelTrack(level: CGFloat(app.level), muted: app.isMuted)
-                        Slider(
-                            value: Binding(
-                                get: { Double(app.volume) },
-                                set: { mixer.setVolume($0, for: app.id) }
-                            ),
-                            in: 0...1
-                        )
-                        .labelsHidden()
-                        .tint(.clear)
-                        .opacity(0.82)
-                    }
-                    .frame(height: 16)
+                    MeterSlider(
+                        value: Binding(
+                            get: { Double(app.volume) },
+                            set: { mixer.setVolume($0, for: app.id) }
+                        ),
+                        level: CGFloat(app.level),
+                        muted: app.isMuted
+                    )
+                    .frame(height: 20)
                 }
             }
         }
@@ -223,28 +218,65 @@ private struct AppVolumeRow: View {
     }
 }
 
-private struct LevelTrack: View {
+private struct MeterSlider: View {
+    @Binding var value: Double
     let level: CGFloat
     let muted: Bool
 
+    private let thumbSize: CGFloat = 20
+    private let trackHeight: CGFloat = 7
+
     var body: some View {
         GeometryReader { proxy in
-            let width = max(0, min(proxy.size.width, proxy.size.width * level))
+            let trackWidth = max(0, proxy.size.width - thumbSize)
+            let clampedLevel = max(0, min(1, level))
+            let clampedValue = max(0, min(1, value))
+            let thumbX = (thumbSize / 2) + (trackWidth * clampedValue)
+
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.secondary.opacity(0.16))
                 Capsule()
-                    .fill(muted ? AnyShapeStyle(Color.secondary.opacity(0.35)) : AnyShapeStyle(meterGradient))
-                    .frame(width: width)
+                    .fill(Color.secondary.opacity(0.24))
+                    .frame(width: trackWidth, height: trackHeight)
+                    .offset(x: thumbSize / 2)
+
+                Capsule()
+                    .fill(muted ? AnyShapeStyle(Color.secondary.opacity(0.45)) : AnyShapeStyle(meterGradient))
+                    .frame(width: trackWidth * clampedLevel, height: trackHeight)
+                    .offset(x: thumbSize / 2)
+                    .shadow(color: muted ? .clear : Color.accentColor.opacity(0.28), radius: 2)
                     .animation(.linear(duration: 0.05), value: level)
+
+                Circle()
+                    .fill(.white)
+                    .overlay(Circle().stroke(Color.black.opacity(0.08), lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                    .frame(width: thumbSize, height: thumbSize)
+                    .position(x: thumbX, y: proxy.size.height / 2)
+            }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { gesture in
+                        let position = gesture.location.x - (thumbSize / 2)
+                        value = max(0, min(1, position / max(1, trackWidth)))
+                    }
+            )
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Application volume")
+        .accessibilityValue("\(Int(value * 100)) percent")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: value = min(1, value + 0.05)
+            case .decrement: value = max(0, value - 0.05)
+            @unknown default: break
             }
         }
-        .frame(height: 5)
-        .allowsHitTesting(false)
     }
 
     private var meterGradient: LinearGradient {
         LinearGradient(
-            colors: [.accentColor, .green, .yellow],
+            colors: [.blue, .cyan, .green, .yellow],
             startPoint: .leading,
             endPoint: .trailing
         )
