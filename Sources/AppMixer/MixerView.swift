@@ -197,15 +197,20 @@ private struct AppVolumeRow: View {
                     .buttonStyle(.plain)
                     .foregroundStyle(app.isMuted ? Color.red : Color.secondary)
 
-                    MeterSlider(
-                        value: Binding(
-                            get: { Double(app.volume) },
-                            set: { mixer.setVolume($0, for: app.id) }
-                        ),
-                        level: CGFloat(app.level),
-                        muted: app.isMuted
-                    )
-                    .frame(height: 20)
+                    ZStack(alignment: .leading) {
+                        LevelTrack(level: CGFloat(app.level), muted: app.isMuted)
+                        Slider(
+                            value: Binding(
+                                get: { Double(app.volume) },
+                                set: { mixer.setVolume($0, for: app.id) }
+                            ),
+                            in: 0...1
+                        )
+                        .labelsHidden()
+                        .tint(.clear)
+                        .opacity(0.82)
+                    }
+                    .frame(height: 16)
                 }
             }
         }
@@ -218,41 +223,31 @@ private struct AppVolumeRow: View {
     }
 }
 
-private struct MeterSlider: View {
-    @Binding var value: Double
+private struct LevelTrack: View {
     let level: CGFloat
     let muted: Bool
 
-    private let thumbSize: CGFloat = 20
-
     var body: some View {
-        ZStack {
-            // Keep Apple's native macOS slider so application rows and the
-            // output-device row share the same glass thumb and track styling.
-            Slider(value: $value, in: 0...1)
-                .labelsHidden()
-
-            GeometryReader { proxy in
-                let trackWidth = max(0, proxy.size.width - thumbSize)
-                let clampedLevel = max(0, min(1, level))
-                let clampedValue = max(0, min(1, value))
-                let levelWidth = trackWidth * min(clampedLevel, clampedValue)
-                let thumbClearance = thumbSize / 2
-                let selectedWidth = trackWidth * clampedValue
-                let visibleWidth = max(0, min(levelWidth, selectedWidth - thumbClearance))
-
+        GeometryReader { proxy in
+            let width = max(0, min(proxy.size.width, proxy.size.width * level))
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.secondary.opacity(0.16))
                 Capsule()
-                    .fill(muted ? Color.secondary.opacity(0.55) : Color.green.opacity(0.78))
-                    .frame(width: visibleWidth, height: 4)
-                    .position(
-                        x: (thumbSize / 2) + (visibleWidth / 2),
-                        y: proxy.size.height / 2
-                    )
+                    .fill(muted ? AnyShapeStyle(Color.secondary.opacity(0.35)) : AnyShapeStyle(meterGradient))
+                    .frame(width: width)
                     .animation(.linear(duration: 0.05), value: level)
             }
-            .allowsHitTesting(false)
         }
-        .accessibilityLabel("Application volume")
+        .frame(height: 5)
+        .allowsHitTesting(false)
+    }
+
+    private var meterGradient: LinearGradient {
+        LinearGradient(
+            colors: [.accentColor, .green, .yellow],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
     }
 }
 
