@@ -1,5 +1,6 @@
 import AppKit
 import CoreAudio
+import Darwin
 import Foundation
 
 @MainActor
@@ -159,6 +160,7 @@ final class MixerModel: ObservableObject {
                         routes[key] = route
                     } catch {
                         routes.removeValue(forKey: key)
+                        NSLog("AppMixer could not route %@: %@", name, error.localizedDescription)
                         // Keep the app visible. Permission denial and unsupported streams
                         // are surfaced in the footer instead of hiding the process.
                     }
@@ -326,9 +328,10 @@ final class MixerModel: ObservableObject {
     /// Daemons have no enclosing `.app` and are intentionally excluded. Helper
     /// processes use the outermost enclosing app so Chrome Helper becomes Chrome.
     private func applicationIdentity(for pid: pid_t, reportedBundleID: String) -> ApplicationIdentity? {
-        guard let runningApp = NSRunningApplication(processIdentifier: pid) else { return nil }
-
-        let candidatePath = runningApp.executableURL?.path ?? runningApp.bundleURL?.path
+        let runningApp = NSRunningApplication(processIdentifier: pid)
+        let candidatePath = runningApp?.executableURL?.path
+            ?? runningApp?.bundleURL?.path
+            ?? executablePath(for: pid)
         guard let candidatePath,
               let appURL = outermostApplicationURL(in: candidatePath),
               let bundle = Bundle(url: appURL),
@@ -365,6 +368,13 @@ final class MixerModel: ObservableObject {
             name: displayName,
             icon: NSWorkspace.shared.icon(forFile: appURL.path)
         )
+    }
+
+    private func executablePath(for pid: pid_t) -> String? {
+        var buffer = [CChar](repeating: 0, count: 4096)
+        let length = proc_pidpath(pid, &buffer, UInt32(buffer.count))
+        guard length > 0 else { return nil }
+        return String(cString: buffer)
     }
 
     private func outermostApplicationURL(in path: String) -> URL? {

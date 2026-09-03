@@ -14,6 +14,15 @@ rm -rf "$APP_DIR"
 mkdir -p "$CONTENTS_DIR/MacOS" "$CONTENTS_DIR/Resources"
 cp "$BIN_DIR/AppMixer" "$CONTENTS_DIR/MacOS/AppMixer"
 cp "$PROJECT_DIR/Resources/Info.plist" "$CONTENTS_DIR/Info.plist"
-codesign --force --deep --sign - "$APP_DIR"
+# Give local ad-hoc builds a stable designated requirement. Without this,
+# codesign falls back to a requirement based on the executable's changing
+# cdhash and macOS forgets System Audio Recording approval after every rebuild.
+codesign \
+    --force \
+    --deep \
+    --sign - \
+    --identifier "com.valentincassarino.AppMixer" \
+    --requirements '=designated => identifier "com.valentincassarino.AppMixer"' \
+    "$APP_DIR"
 
 echo "$APP_DIR"
