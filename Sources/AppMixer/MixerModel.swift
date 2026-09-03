@@ -128,7 +128,12 @@ final class MixerModel: ObservableObject {
             }
 
             let appGroups = groupsByBundleID.values
-                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+                .sorted {
+                    if $0.isPlaying != $1.isPlaying {
+                        return $0.isPlaying && !$1.isPlaying
+                    }
+                    return $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+                }
 
             let liveBundleIDs = Set(appGroups.map(\.bundleID))
             for (bundleID, route) in routes where !liveBundleIDs.contains(bundleID) {
